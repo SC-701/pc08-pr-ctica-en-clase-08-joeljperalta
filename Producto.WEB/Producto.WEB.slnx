@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Abstracciones/Abstracciones.csproj" Id="ac22b811-90c4-47cc-a798-36ca1a178ed9" />
+  <Project Path="Producto.WEB/Producto.WEB.csproj" />
+  <Project Path="Reglas/Reglas.csproj" />
+</Solution>

@@ -1,0 +1,56 @@
+﻿@page
+@model AgregarModel
+@{
+}
+
+<h1>Agregar Producto</h1>
+
+<form method="post">
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label asp-for="producto.Nombre"></label>
+        <input asp-for="producto.Nombre" class="form-control" />
+        <span asp-validation-for="producto.Nombre" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="producto.Descripcion"></label>
+        <input asp-for="producto.Descripcion" class="form-control" />
+        <span asp-validation-for="producto.Descripcion" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="producto.Precio"></label>
+        <input asp-for="producto.Precio" class="form-control" />
+        <span asp-validation-for="producto.Precio" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="producto.Stock"></label>
+        <input asp-for="producto.Stock" class="form-control" />
+        <span asp-validation-for="producto.Stock" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="producto.CodigoBarras"></label>
+        <input asp-for="producto.CodigoBarras" class="form-control" />
+        <span asp-validation-for="producto.CodigoBarras" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="producto.Categoria" class="form-label"></label>
+        <input asp-for="producto.Categoria" class="form-control" />
+        <span asp-validation-for="producto.Categoria" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="producto.SubCategoria" class="form-label"></label>
+        <input asp-for="producto.SubCategoria" class="form-control" />
+        <span asp-validation-for="producto.SubCategoria" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <input type="submit" value="Agregar" class="btn btn-success" />
+        <a class="btn btn-primary" asp-page="./Index">Regresar</a>
+    </div>
+</form>

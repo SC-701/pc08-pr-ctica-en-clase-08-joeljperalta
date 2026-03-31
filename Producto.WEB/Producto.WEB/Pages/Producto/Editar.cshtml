@@ -1,0 +1,53 @@
+﻿@page "{id:guid}"
+@model EditarModel
+
+<h1>Editar Producto</h1>
+
+<div class="container">
+    <div class="col-xl-5 col-lg-6 col-md-8 col-sm-10 mx-auto">
+
+        <form method="post">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+            <input type="hidden" asp-for="producto.Id" />
+
+            <div class="mb-3">
+                <label asp-for="producto.Nombre"></label>
+                <input asp-for="producto.Nombre" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="producto.Descripcion"></label>
+                <input asp-for="producto.Descripcion" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="producto.Precio"></label>
+                <input asp-for="producto.Precio" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="producto.Stock"></label>
+                <input asp-for="producto.Stock" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="producto.CodigoBarras"></label>
+                <input asp-for="producto.CodigoBarras" class="form-control" />
+            </div>
+
+
+            <div class="mb-3">
+                <label asp-for="producto.SubCategoria">Id Subcategoría</label>
+                <input asp-for="producto.SubCategoria" class="form-control" />
+                <span asp-validation-for="producto.SubCategoria" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <a class="btn btn-primary" asp-page="./Index">Regresar</a>
+                <input type="submit" value="Editar" class="btn btn-success" />
+            </div>
+
+        </form>
+    </div>
+</div>
