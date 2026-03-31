@@ -1,41 +1,66 @@
 using Abstracciones.Modelos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Reglas;
+using System.Net.Http.Headers;
 
-public class AgregarModel : PageModel
+namespace Producto.WEB.Pages.Producto
 {
-    private readonly ProductoReglas _productoReglas;
-
-    public AgregarModel(ProductoReglas productoReglas)
+    [Authorize]
+    public class AgregarModel : PageModel
     {
-        _productoReglas = productoReglas;
-    }
+        private readonly IConfiguration _configuracion;
 
-    [BindProperty]
-    public ProductoRequest producto { get; set; }
-
-    public void OnGet()
-    {
-
-    }
-
-    public async Task<IActionResult> OnPost()
-    {
-        if (!ModelState.IsValid)
-            return Page();
-
-
-        if (!Guid.TryParse(producto.SubCategoria, out Guid idSubcategoria))
+        public AgregarModel(IConfiguration configuracion)
         {
-            ModelState.AddModelError("producto.SubCategoria", "Subcategoría inválida");
-            return Page();
+            _configuracion = configuracion;
         }
 
-        producto.IdSubcategoria = idSubcategoria;
+        [BindProperty]
+        public ProductoRequest producto { get; set; }
 
-        await _productoReglas.Agregar(producto);
+        public void OnGet()
+        {
+        }
 
-        return RedirectToPage("./Index");
+        public async Task<IActionResult> OnPost()
+        {
+            if (!ModelState.IsValid)
+                return Page();
+
+            if (!Guid.TryParse(producto.SubCategoria, out Guid idSubcategoria))
+            {
+                ModelState.AddModelError("producto.SubCategoria", "Subcategoría inválida");
+                return Page();
+            }
+
+            producto.IdSubcategoria = idSubcategoria;
+
+            string endpoint = _configuracion["ApiProductos"] + "Producto";
+
+            var cliente = ObtenerClienteConToken();
+
+            var respuesta = await cliente.PostAsJsonAsync(endpoint, producto);
+
+            respuesta.EnsureSuccessStatusCode();
+
+            return RedirectToPage("./Index");
+        }
+
+        private HttpClient ObtenerClienteConToken()
+        {
+            var tokenClaim = HttpContext.User.Claims
+                .FirstOrDefault(c => c.Type == "Token");
+
+            var cliente = new HttpClient();
+
+            if (tokenClaim != null)
+            {
+                cliente.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", tokenClaim.Value);
+            }
+
+            return cliente;
+        }
     }
 }

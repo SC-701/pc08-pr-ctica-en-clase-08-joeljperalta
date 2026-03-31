@@ -1,23 +1,63 @@
 using Abstracciones.Modelos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Reglas;
+using System.Net;
 using System.Text.Json;
 
 namespace Producto.WEB.Pages.Producto
 {
+    [Authorize]
     public class IndexModel : PageModel
     {
-        private readonly ProductoReglas _productoReglas;
-        public List<ProductoResponse> productos { get; set; } = new();
+        private readonly IConfiguration _configuracion;
 
-        public IndexModel(ProductoReglas productoReglas)
+        public IList<ProductoResponse> productos { get; set; } = new List<ProductoResponse>();
+
+        public IndexModel(IConfiguration configuracion)
         {
-            _productoReglas = productoReglas;
+            _configuracion = configuracion;
         }
 
         public async Task OnGet()
         {
-            productos = await _productoReglas.Obtener();
+            string endpoint = _configuracion["ApiProductos"] + "Producto";
+
+            using var cliente = ObtenerClienteConToken();
+
+            var solicitud = new HttpRequestMessage(HttpMethod.Get, endpoint);
+
+            var respuesta = await cliente.SendAsync(solicitud);
+
+            respuesta.EnsureSuccessStatusCode();
+
+            if (respuesta.StatusCode == HttpStatusCode.OK)
+            {
+                var resultado = await respuesta.Content.ReadAsStringAsync();
+
+                var opciones = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                productos = JsonSerializer.Deserialize<List<ProductoResponse>>(resultado, opciones);
+            }
+        }
+
+        private HttpClient ObtenerClienteConToken()
+        {
+            var tokenClaim = HttpContext.User.Claims
+                .FirstOrDefault(c => c.Type == "Token");
+
+            var cliente = new HttpClient();
+
+            if (tokenClaim != null)
+            {
+                cliente.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue(
+                        "Bearer", tokenClaim.Value);
+            }
+
+            return cliente;
         }
     }
 }

@@ -1,17 +1,20 @@
 using Abstracciones.Modelos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Reglas;
+using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace Producto.WEB.Pages.Producto
 {
+    [Authorize]
     public class EliminarModel : PageModel
     {
-        private readonly ProductoReglas _productoReglas;
+        private readonly IConfiguration _configuracion;
 
-        public EliminarModel(ProductoReglas productoReglas)
+        public EliminarModel(IConfiguration configuracion)
         {
-            _productoReglas = productoReglas;
+            _configuracion = configuracion;
         }
 
         [BindProperty]
@@ -19,15 +22,54 @@ namespace Producto.WEB.Pages.Producto
 
         public async Task<IActionResult> OnGet(Guid id)
         {
-            producto = await _productoReglas.Obtener(id);
-            if (producto == null) return NotFound();
+            string endpoint = _configuracion["ApiProductos"] + $"Producto/{id}";
+
+            var cliente = ObtenerClienteConToken();
+
+            var respuesta = await cliente.GetAsync(endpoint);
+
+            if (!respuesta.IsSuccessStatusCode)
+                return NotFound();
+
+            var resultado = await respuesta.Content.ReadAsStringAsync();
+
+            var opciones = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            producto = JsonSerializer.Deserialize<ProductoResponse>(resultado, opciones);
+
             return Page();
         }
 
-        public async Task<IActionResult> OnPost()
+        public async Task<IActionResult> OnPost(Guid id)
         {
-            await _productoReglas.Eliminar(producto.Id);
+            string endpoint = _configuracion["ApiProductos"] + $"Producto/{id}";
+
+            var cliente = ObtenerClienteConToken();
+
+            var respuesta = await cliente.DeleteAsync(endpoint);
+
+            respuesta.EnsureSuccessStatusCode();
+
             return RedirectToPage("./Index");
+        }
+
+        private HttpClient ObtenerClienteConToken()
+        {
+            var tokenClaim = HttpContext.User.Claims
+                .FirstOrDefault(c => c.Type == "Token");
+
+            var cliente = new HttpClient();
+
+            if (tokenClaim != null)
+            {
+                cliente.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", tokenClaim.Value);
+            }
+
+            return cliente;
         }
     }
 }

@@ -1,17 +1,20 @@
 using Abstracciones.Modelos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Reglas;
+using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace Producto.WEB.Pages.Producto
 {
+    [Authorize]
     public class EditarModel : PageModel
     {
-        private readonly ProductoReglas _productoReglas;
+        private readonly IConfiguration _configuracion;
 
-        public EditarModel(ProductoReglas productoReglas)
+        public EditarModel(IConfiguration configuracion)
         {
-            _productoReglas = productoReglas;
+            _configuracion = configuracion;
         }
 
         [BindProperty]
@@ -19,8 +22,26 @@ namespace Producto.WEB.Pages.Producto
 
         public async Task<IActionResult> OnGet(Guid id)
         {
-            var prod = await _productoReglas.Obtener(id);
-            if (prod == null) return NotFound();
+            string endpoint = _configuracion["ApiProductos"] + $"Producto/{id}";
+
+            var cliente = ObtenerClienteConToken();
+
+            var respuesta = await cliente.GetAsync(endpoint);
+
+            if (!respuesta.IsSuccessStatusCode)
+                return NotFound();
+
+            var resultado = await respuesta.Content.ReadAsStringAsync();
+
+            var opciones = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var prod = JsonSerializer.Deserialize<ProductoResponse>(resultado, opciones);
+
+            if (prod == null)
+                return NotFound();
 
             producto = new ProductoRequest
             {
@@ -30,9 +51,8 @@ namespace Producto.WEB.Pages.Producto
                 Precio = prod.Precio,
                 Stock = prod.Stock,
                 CodigoBarras = prod.CodigoBarras,
-
                 IdSubcategoria = prod.IdSubcategoria,
-                SubCategoria = prod.IdSubcategoria.ToString(), 
+                SubCategoria = prod.IdSubcategoria.ToString(),
                 Categoria = prod.Categoria
             };
 
@@ -44,7 +64,6 @@ namespace Producto.WEB.Pages.Producto
             if (!ModelState.IsValid)
                 return Page();
 
- 
             if (!Guid.TryParse(producto.SubCategoria, out Guid idSubcategoria))
             {
                 ModelState.AddModelError("producto.SubCategoria", "Subcategoría inválida");
@@ -53,9 +72,31 @@ namespace Producto.WEB.Pages.Producto
 
             producto.IdSubcategoria = idSubcategoria;
 
-            await _productoReglas.Editar(producto.Id, producto);
+            string endpoint = _configuracion["ApiProductos"] + $"Producto/{producto.Id}";
+
+            var cliente = ObtenerClienteConToken();
+
+            var respuesta = await cliente.PutAsJsonAsync(endpoint, producto);
+
+            respuesta.EnsureSuccessStatusCode();
 
             return RedirectToPage("./Index");
+        }
+
+        private HttpClient ObtenerClienteConToken()
+        {
+            var tokenClaim = HttpContext.User.Claims
+                .FirstOrDefault(c => c.Type == "Token");
+
+            var cliente = new HttpClient();
+
+            if (tokenClaim != null)
+            {
+                cliente.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", tokenClaim.Value);
+            }
+
+            return cliente;
         }
     }
 }
